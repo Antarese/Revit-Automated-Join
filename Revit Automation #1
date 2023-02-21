@@ -1,0 +1,35 @@
+
+Public Sub JoinSelectedElements()
+
+    ' Select the elements to join
+    Dim uiDoc As UIDocument = ActiveUIDocument
+    Dim selSet As Selection = uiDoc.Selection
+    Dim elemIds As ICollection(Of ElementId) = selSet.GetElementIds()
+    
+    ' Check if any elements are selected
+    If elemIds.Count = 0 Then
+        TaskDialog.Show("Join Elements", "Please select at least one beam, floor, or column to join.")
+        Exit Sub
+    End If
+    
+    ' Join the selected elements
+    Dim doc As Document = uiDoc.Document
+    Dim tx As New Transaction(doc, "Join Elements")
+    tx.Start()
+    For Each elemId As ElementId In elemIds
+        Dim elem As Element = doc.GetElement(elemId)
+        If TypeOf elem Is FamilyInstance Then
+            Dim fi As FamilyInstance = TryCast(elem, FamilyInstance)
+            If fi.Category.Name = "Structural Framing" Or fi.Category.Name = "Floors" Or fi.Category.Name = "Columns" Then
+                Dim jOpt As New JoinGeometryOptions
+                jOpt.ComputeReferences = True
+                doc.JoinGeometry(fi, jOpt)
+            End If
+        End If
+    Next
+    tx.Commit()
+    
+    ' Show a message box to indicate the completion of the macro
+    TaskDialog.Show("Join Elements", "Selected beams, floors, and columns have been joined.")
+    
+End Sub
